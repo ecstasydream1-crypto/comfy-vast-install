@@ -23,7 +23,10 @@ NODES=(
     "https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git"
     "https://github.com/rgthree/rgthree-comfy.git"
     "https://github.com/jnxmx/ComfyUI_HuggingFace_Downloader.git"
+
+    # Teskor utils
     "https://github.com/teskor-hub/NEW-UTILS.git"
+    "https://github.com/teskor-hub/comfyui-teskors-utils.git"
 
     # Для missing nodes
     "https://github.com/TinyTerra/ComfyUI_tinyterraNodes.git"
@@ -68,6 +71,7 @@ LORAS=(
 
 provisioning_clone_comfyui() {
     if [[ ! -d "${COMFYUI_DIR}" ]]; then
+        echo "Cloning ComfyUI..."
         git clone https://github.com/comfyanonymous/ComfyUI.git "${COMFYUI_DIR}"
     fi
     cd "${COMFYUI_DIR}"
@@ -75,18 +79,21 @@ provisioning_clone_comfyui() {
 
 provisioning_install_base_reqs() {
     if [[ -f requirements.txt ]]; then
+        echo "Installing base requirements..."
         pip install --no-cache-dir -r requirements.txt
     fi
 }
 
 provisioning_get_apt_packages() {
     if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
+        echo "Installing apt packages..."
         sudo apt update && sudo apt install -y "${APT_PACKAGES[@]}"
     fi
 }
 
 provisioning_get_pip_packages() {
     if [[ ${#PIP_PACKAGES[@]} -gt 0 ]]; then
+        echo "Installing extra pip packages..."
         pip install --no-cache-dir "${PIP_PACKAGES[@]}"
     fi
 }
@@ -102,7 +109,11 @@ provisioning_get_nodes() {
 
         if [[ -d "$path" ]]; then
             echo "Updating node: $dir"
-            (cd "$path" && git pull --ff-only 2>/dev/null || true)
+            (
+                cd "$path" && \
+                git pull --ff-only 2>/dev/null || \
+                git fetch --all 2>/dev/null || true
+            )
         else
             echo "Cloning node: $dir"
             git clone "$repo" "$path" --recursive || echo " [!] Clone failed: $repo"
@@ -131,6 +142,7 @@ provisioning_get_files() {
             auth_header="--header=Authorization: Bearer $CIVITAI_TOKEN"
         fi
 
+        echo "Downloading: $url"
         wget $auth_header -nc --content-disposition --show-progress -e dotbytes=4M -P "$dir" "$url" || echo " [!] Download failed: $url"
     done
 }
